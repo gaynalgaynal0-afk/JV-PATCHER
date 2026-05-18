@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JV-60FPS | Video Patcher</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: #050d1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(0,200,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,100,255,0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .card {
+    position: relative;
+    background: rgba(5,20,45,0.9);
+    border: 1px solid rgba(0,200,255,0.2);
+    border-radius: 20px;
+    padding: 40px 32px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 0 40px rgba(0,200,255,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    z-index: 1;
+    margin: 20px auto;
+  }
+
+  .card::before, .card::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: #00c8ff;
+    border-style: solid;
+  }
+  .card::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
+  .card::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; border-radius: 0 0 4px 0; }
+
+  .logo-wrap { text-align: center; margin-bottom: 24px; }
+
+  .logo-icon {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, #0a2040, #0d3060);
+    border: 2px solid rgba(0,200,255,0.3);
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin-bottom: 16px;
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    0% { box-shadow: 0 0 20px rgba(0,200,255,0.15); }
+    100% { box-shadow: 0 0 30px rgba(0,200,255,0.35); }
+  }
+
+  h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 26px; font-weight: 700;
+    color: #fff; letter-spacing: 3px; text-transform: uppercase;
+  }
+
+  .subtitle { font-size: 11px; color: rgba(0,200,255,0.6); letter-spacing: 4px; margin-top: 4px; }
+
+  .select-btn {
+    width: 100%; padding: 16px;
+    background: rgba(0,200,255,0.06);
+    border: 1px solid rgba(0,200,255,0.25);
+    border-radius: 12px;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px; font-weight: 600; letter-spacing: 2px;
+    cursor: pointer; transition: all 0.3s; margin-bottom: 10px;
+  }
+
+  .select-btn:hover { background: rgba(0,200,255,0.12); border-color: rgba(0,200,255,0.5); }
+
+  .file-name {
+    text-align: center; font-size: 11px;
+    color: rgba(0,200,255,0.5); margin-bottom: 16px;
+    min-height: 16px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  .patch-btn {
+    width: 100%; padding: 18px;
+    background: transparent;
+    border: 2px solid #00c8ff;
+    border-radius: 12px;
+    color: #00c8ff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px; font-weight: 700; letter-spacing: 3px;
+    cursor: pointer; transition: all 0.3s;
+    position: relative; overflow: hidden; margin-bottom: 20px;
+  }
+
+  .patch-btn:hover { background: rgba(0,200,255,0.1); box-shadow: 0 0 20px rgba(0,200,255,0.3); }
+  .patch-btn.active { background: rgba(0,200,255,0.15); animation: borderPulse 1s ease-in-out infinite; }
+  .patch-btn.success { border-color: #00ff88; color: #00ff88; background: rgba(0,255,136,0.08); }
+
+  @keyframes borderPulse {
+    0%,100% { box-shadow: 0 0 10px rgba(0,200,255,0.2); }
+    50% { box-shadow: 0 0 25px rgba(0,200,255,0.5); }
+  }
+
+  .tip { font-size: 11px; color: rgba(255,255,255,0.3); text-align: center; line-height: 1.6; margin-bottom: 20px; }
+
+  .log-box {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,200,255,0.1);
+    border-radius: 10px; padding: 16px;
+    min-height: 90px; font-size: 12px;
+    color: #00c8ff; line-height: 1.8; margin-bottom: 24px;
+  }
+
+  .log-line { opacity: 0; animation: fadeIn 0.3s forwards; }
+  .log-success { color: #00ff88; }
+  .log-error { color: #ff4d6d; }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  .socials { display: flex; justify-content: center; gap: 20px; }
+  .socials a { color: rgba(255,255,255,0.3); font-size: 20px; transition: color 0.3s; text-decoration: none; }
+  .socials a:hover { color: #00c8ff; }
+
+  #fileInput { display: none; }
+
+  .maintenance-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.97); z-index: 9999;
+    flex-direction: column; align-items: center;
+    justify-content: center; font-family: 'Share Tech Mono', monospace;
+    text-align: center; padding: 20px;
+  }
+  .maintenance-overlay.show { display: flex; }
+</style>
+</head>
+<body>
+
+<div class="maintenance-overlay" id="maintenanceOverlay">
+  <div style="color:#f39c12;font-size:28px;font-weight:bold;margin-bottom:16px;">🔧 MAINTENANCE</div>
+  <div style="color:#fff;font-size:14px;line-height:2;white-space:pre-line;" id="maintenanceMsg"></div>
+  <div style="color:#888;font-size:12px;margin-top:24px;">TG: @jv_60fps</div>
+</div>
+
+<div class="card">
+  <div class="logo-wrap">
+    <div class="logo-icon">⚡</div>
+    <h1>JV-60FPS</h1>
+    <div class="subtitle">PERFORMANCE TOOLKIT</div>
+  </div>
+
+  <input type="file" id="fileInput" accept="video/mp4,video/*">
+  <button class="select-btn" onclick="document.getElementById('fileInput').click()">SELECT VIDEO</button>
+  <div class="file-name" id="fileName">No file selected</div>
+
+  <button class="patch-btn" id="patchBtn" onclick="startPatch()">AUTO-PATCH</button>
+
+  <div class="tip">Tip: Keep your edit between 20MB–40MB to minimize lag on TikTok. For best results, use 1080p 60fps source.</div>
+
+  <div class="log-box" id="logBox">
+    <div class="log-line" style="opacity:1">Awaiting file...</div>
+  </div>
+
+  <div class="socials">
+    <a href="https://t.me/jv_60fps" target="_blank">✈</a>
+    <a href="https://tiktok.com/@jv_60fps" target="_blank">♪</a>
+  </div>
+</div>
+
+<script>
+const SERVER = 'https://whimsical-muffin-a9296e.netlify.app/.netlify/functions/get_bypass_config';
+let selectedFile = null;
+let serverPayload = 500000;
+
+async function loadConfig() {
+  try {
+    const res = await fetch(SERVER, { method: 'POST' });
+    const data = await res.json();
+    if (data.maintenance) {
+      document.getElementById('maintenanceMsg').innerText = data.error || '🔧 Method is in Maintenance Mode.\n\nTG: @jv_60fps';
+      document.getElementById('maintenanceOverlay').classList.add('show');
+      return;
+    }
+    if (data.success) serverPayload = data.payload || 500000;
+  } catch(e) {}
+}
+
+loadConfig();
+
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  selectedFile = e.target.files[0];
+  if (selectedFile) {
+    document.getElementById('fileName').textContent = selectedFile.name;
+    setLog([{ text: 'Awaiting patch command...', type: '' }]);
+  }
+});
+
+function setLog(lines) {
+  const box = document.getElementById('logBox');
+  box.innerHTML = lines.map((l, i) =>
+    `<div class="log-line log-${l.type||''}" style="animation-delay:${i*0.15}s">${l.text}</div>`
+  ).join('');
+}
+
+async function startPatch() {
+  if (!selectedFile) {
+    setLog([{ text: '> Please select a video first.', type: 'error' }]);
+    return;
+  }
+
+  const btn = document.getElementById('patchBtn');
+  btn.classList.add('active');
+  btn.textContent = 'PATCHING...';
+  btn.onclick = null;
+
+  try {
+    setLog([{ text: '> Analyzing video binary structure...' }]);
+    await sleep(500);
+
+    const buffer = await selectedFile.arrayBuffer();
+    const uint8 = new Uint8Array(buffer);
+    const dataView = new DataView(buffer);
+
+    // Find elst atom
+    const elstMagic = [0x65, 0x6C, 0x73, 0x74];
+    let elstIndex = -1;
+    for (let i = 0; i < uint8.length - 4; i++) {
+      if (uint8[i]===elstMagic[0] && uint8[i+1]===elstMagic[1] &&
+          uint8[i+2]===elstMagic[2] && uint8[i+3]===elstMagic[3]) {
+        elstIndex = i;
+        break;
+      }
+    }
+
+    setLog([
+      { text: '> Analyzing video binary structure...' },
+      { text: `> Target acquired: ${selectedFile.name}` },
+    ]);
+    await sleep(400);
+
+    if (elstIndex === -1) throw new Error("'elst' atom not found in this video!");
+
+    setLog([
+      { text: '> Analyzing video binary structure...' },
+      { text: `> Target acquired: ${selectedFile.name}` },
+      { text: '> Requesting secure payload...' },
+    ]);
+
+    // Refresh payload from server
+    try {
+      const res = await fetch(SERVER, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) serverPayload = data.payload || serverPayload;
+    } catch(e) {}
+
+    await sleep(500);
+
+    // Inject payload at elst+8
+    const targetOffset = elstIndex + 8;
+    dataView.setUint32(targetOffset, serverPayload, false);
+
+    setLog([
+      { text: '> Analyzing video binary structure...' },
+      { text: `> Target acquired: ${selectedFile.name}` },
+      { text: '> Payload injected successfully.', type: 'success' },
+      { text: '> Success. Download started.', type: 'success' },
+      { text: '> Upload via TikTok web browser only.', type: 'success' },
+    ]);
+
+    // Download patched file
+    const blob = new Blob([buffer], { type: selectedFile.type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const name = selectedFile.name.replace(/\.[^/.]+$/, '');
+    a.download = `${name}_jv60fps.mp4`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    btn.classList.remove('active');
+    btn.classList.add('success');
+    btn.textContent = 'PATCHED ✓';
+    setTimeout(() => {
+      btn.classList.remove('success');
+      btn.textContent = 'AUTO-PATCH';
+      btn.onclick = startPatch;
+    }, 3000);
+
+  } catch(e) {
+    setLog([{ text: '> Error: ' + e.message, type: 'error' }]);
+    btn.classList.remove('active');
+    btn.textContent = 'AUTO-PATCH';
+    btn.onclick = startPatch;
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>

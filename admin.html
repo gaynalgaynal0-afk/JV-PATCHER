@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>JV-60FPS Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0a0a; color: #fff; font-family: monospace; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .box { background: #111; border: 1px solid #222; border-radius: 16px; padding: 32px; width: 100%; max-width: 420px; }
+    h1 { color: #fe2c55; margin-bottom: 8px; font-size: 22px; text-align: center; letter-spacing: 2px; }
+    .subtitle { color: #555; text-align: center; font-size: 11px; margin-bottom: 28px; }
+    label { font-size: 11px; color: #888; display: block; margin-bottom: 6px; letter-spacing: 1px; }
+    input, textarea { width: 100%; background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 14px; margin-bottom: 20px; outline: none; }
+    input:focus, textarea:focus { border-color: #fe2c55; }
+    textarea { height: 80px; resize: none; }
+    button { width: 100%; padding: 14px; background: #fe2c55; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-family: monospace; cursor: pointer; font-weight: bold; letter-spacing: 1px; margin-bottom: 12px; }
+    button:hover { background: #d4244a; }
+    .maintenance-toggle { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 14px; margin-bottom: 20px; }
+    .maintenance-toggle span { font-size: 13px; color: #fff; }
+    .switch { position: relative; width: 50px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #333; border-radius: 26px; transition: .3s; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .3s; }
+    input:checked + .slider { background: #fe2c55; }
+    input:checked + .slider:before { transform: translateX(24px); }
+    #msg { margin-top: 8px; text-align: center; font-size: 13px; min-height: 20px; }
+    #loginBox { display: block; }
+    #configBox { display: none; }
+    .maintenance-msg-box { display: none; }
+    .maintenance-msg-box.show { display: block; }
+  </style>
+</head>
+<body>
+<div class="box">
+  <h1>⚡ JV-60FPS ADMIN</h1>
+  <div class="subtitle">SERVER CONTROL PANEL</div>
+
+  <div id="loginBox">
+    <label>PASSWORD</label>
+    <input type="password" id="passInput" placeholder="Enter password..." onkeydown="if(event.key==='Enter')login()" />
+    <button onclick="login()">🔐 LOGIN</button>
+    <div id="msg"></div>
+  </div>
+
+  <div id="configBox">
+    <label>TAG TEXT</label>
+    <textarea id="tagInput"></textarea>
+
+    <label>PAYLOAD NUMBER</label>
+    <input type="number" id="payloadInput" />
+
+    <label>MAINTENANCE MODE</label>
+    <div class="maintenance-toggle">
+      <span id="maintenanceLabel">OFF</span>
+      <label class="switch">
+        <input type="checkbox" id="maintenanceToggle" onchange="toggleMaintenance()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="maintenance-msg-box" id="maintenanceMsgBox">
+      <label>MAINTENANCE MESSAGE</label>
+      <textarea id="maintenanceMsgInput" placeholder="Message shown to users..."></textarea>
+    </div>
+
+    <button onclick="saveConfig()">💾 SAVE CHANGES</button>
+    <div id="msg"></div>
+  </div>
+</div>
+
+<script>
+  let savedPass = '';
+
+  function toggleMaintenance() {
+    const on = document.getElementById('maintenanceToggle').checked;
+    document.getElementById('maintenanceLabel').innerText = on ? 'ON 🔴' : 'OFF';
+    document.getElementById('maintenanceMsgBox').classList.toggle('show', on);
+  }
+
+  async function login() {
+    const pass = document.getElementById('passInput').value;
+    const msg = document.getElementById('msg');
+    msg.innerText = 'Checking...';
+    msg.style.color = '#aaa';
+    if (pass !== 'MDJOYJR32') {
+      msg.innerText = '❌ Wrong password!';
+      msg.style.color = '#fe2c55';
+      return;
+    }
+    try {
+      const res = await fetch('/.netlify/functions/get_config');
+      const data = await res.json();
+      savedPass = pass;
+      document.getElementById('loginBox').style.display = 'none';
+      document.getElementById('configBox').style.display = 'block';
+      document.getElementById('tagInput').value = data.tag;
+      document.getElementById('payloadInput').value = data.payload;
+      document.getElementById('maintenanceToggle').checked = data.maintenance;
+      document.getElementById('maintenanceLabel').innerText = data.maintenance ? 'ON 🔴' : 'OFF';
+      document.getElementById('maintenanceMsgInput').value = data.maintenance_msg || '';
+      if (data.maintenance) document.getElementById('maintenanceMsgBox').classList.add('show');
+      msg.innerText = '✅ Logged in!';
+      msg.style.color = '#2ecc71';
+    } catch(e) {
+      msg.innerText = '❌ Server error!';
+      msg.style.color = '#fe2c55';
+    }
+  }
+
+  async function saveConfig() {
+    const tag = document.getElementById('tagInput').value;
+    const payload = parseInt(document.getElementById('payloadInput').value);
+    const maintenance = document.getElementById('maintenanceToggle').checked;
+    const maintenance_msg = document.getElementById('maintenanceMsgInput').value;
+    const msg = document.getElementById('msg');
+    msg.innerText = 'Saving...';
+    msg.style.color = '#aaa';
+    try {
+      const res = await fetch('/.netlify/functions/save_config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: savedPass, tag, payload, maintenance, maintenance_msg })
+      });
+      const data = await res.json();
+      if (data.success) {
+        msg.innerText = '✅ Saved successfully!';
+        msg.style.color = '#2ecc71';
+      } else {
+        msg.innerText = '❌ ' + data.error;
+        msg.style.color = '#fe2c55';
+      }
+    } catch(e) {
+      msg.innerText = '❌ Server error!';
+      msg.style.color = '#fe2c55';
+    }
+  }
+</script>
+</body>
+</html>
